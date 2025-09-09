@@ -1,0 +1,220 @@
+package sample1;
+
+package sample1;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class NewsAppSingleFile {
+
+    // --- Article Class ---
+    static class Article {
+        private int articleId;
+        private String title;
+        private String category;
+        private String publisher;
+        private LocalDateTime publishTime;
+
+        public Article(int articleId, String title, String category, String publisher, LocalDateTime publishTime) {
+            this.articleId = articleId;
+            this.title = title;
+            this.category = category;
+            this.publisher = publisher;
+            this.publishTime = publishTime;
+        }
+
+        public int getArticleId() { return articleId; }
+        public String getTitle() { return title; }
+        public String getCategory() { return category; }
+        public String getPublisher() { return publisher; }
+        public LocalDateTime getPublishTime() { return publishTime; }
+    }
+
+    // --- Source Class ---
+    static class Source {
+        private int sourceId;
+        private String name;
+        private String category;
+        private double trustScore;
+
+        public Source(int sourceId, String name, String category, double trustScore) {
+            this.sourceId = sourceId;
+            this.name = name;
+            this.category = category;
+            this.trustScore = trustScore;
+        }
+
+        public int getSourceId() { return sourceId; }
+        public String getName() { return name; }
+        public String getCategory() { return category; }
+        public double getTrustScore() { return trustScore; }
+
+        public void setTrustScore(double trustScore) { this.trustScore = trustScore; }
+
+        public String report() {
+            return name + " | Category: " + category + " | Trust Score: " + trustScore;
+        }
+    }
+
+    // --- Subscriber Base Class ---
+    static class Subscriber {
+        protected int id;
+        protected String name;
+        protected String email;
+        protected List<String> preferences;
+        protected String plan;
+
+        public Subscriber(int id, String name, String email, List<String> preferences, String plan) {
+            this.id = id;
+            this.name = name;
+            this.email = email;
+            this.preferences = preferences;
+            this.plan = plan;
+        }
+
+        public int getId() { return id; }
+        public String getName() { return name; }
+        public String getEmail() { return email; }
+        public List<String> getPreferences() { return preferences; }
+        public String getPlan() { return plan; }
+
+        public void setPreferences(List<String> preferences) { this.preferences = preferences; }
+
+        public List<Article> buildDigest(List<Article> articles) {
+            return articles;
+        }
+
+        public void printDigest(List<Article> digest) {
+            System.out.println("Digest for: " + name + " (" + plan + ")");
+            for (Article a : digest) {
+                System.out.println(" - " + a.getTitle() + " | " + a.getPublisher());
+            }
+        }
+    }
+
+    // --- Free Subscriber ---
+    static class FreeSubscriber extends Subscriber {
+        private static final int DIGEST_LIMIT = 3;
+
+        public FreeSubscriber(int id, String name, String email, List<String> preferences) {
+            super(id, name, email, preferences, "Free");
+        }
+
+        @Override
+        public List<Article> buildDigest(List<Article> articles) {
+            List<Article> digest = new ArrayList<>();
+            for (Article a : articles) {
+                if (preferences.contains(a.getCategory())) {
+                    digest.add(a);
+                    if (digest.size() >= DIGEST_LIMIT) break;
+                }
+            }
+            return digest;
+        }
+    }
+
+    // --- Paid Subscriber ---
+    static class PaidSubscriber extends Subscriber {
+        public PaidSubscriber(int id, String name, String email, List<String> preferences) {
+            super(id, name, email, preferences, "Paid");
+        }
+
+        @Override
+        public List<Article> buildDigest(List<Article> articles) {
+            return articles.stream()
+                    .filter(a -> preferences.contains(a.getCategory()))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    // --- News Service ---
+    static class NewsService {
+        private List<Source> sources = new ArrayList<>();
+        private List<Article> articles = new ArrayList<>();
+
+        public void addSource(Source s) {
+            sources.add(s);
+        }
+
+        public void fetchArticles() {
+            articles.add(new Article(1, "AI Beats Humans", "Tech", "TechNews", LocalDateTime.now()));
+            articles.add(new Article(2, "Championship Final", "Sports", "ESPN", LocalDateTime.now()));
+            articles.add(new Article(3, "New iPhone Release", "Tech", "AppleInsider", LocalDateTime.now()));
+            articles.add(new Article(4, "World Cup Update", "Sports", "BBC Sports", LocalDateTime.now()));
+            articles.add(new Article(5, "Quantum Breakthrough", "Tech", "Nature", LocalDateTime.now()));
+        }
+
+        public List<Article> getArticles() {
+            return articles;
+        }
+
+        // Method Overloading
+        public List<Article> filter(String category) {
+            return articles.stream()
+                    .filter(a -> a.getCategory().equalsIgnoreCase(category))
+                    .collect(Collectors.toList());
+        }
+
+        public List<Article> filter(LocalDateTime from, LocalDateTime to) {
+            return articles.stream()
+                    .filter(a -> a.getPublishTime().isAfter(from) && a.getPublishTime().isBefore(to))
+                    .collect(Collectors.toList());
+        }
+
+        public List<Article> filterByKeyword(String keyword) {
+            return articles.stream()
+                    .filter(a -> a.getTitle().toLowerCase().contains(keyword.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        public void printSourceTrustReport() {
+            System.out.println("\n--- Source Trust Report ---");
+            for (Source s : sources) {
+                System.out.println(s.report());
+            }
+        }
+    }
+
+    // --- Main Method ---
+    public static void main(String[] args) {
+        NewsService newsService = new NewsService();
+
+        // Add Sources
+        newsService.addSource(new Source(1, "TechNews", "Tech", 8.5));
+        newsService.addSource(new Source(2, "ESPN", "Sports", 9.1));
+        newsService.addSource(new Source(3, "AppleInsider", "Tech", 7.8));
+        newsService.addSource(new Source(4, "BBC Sports", "Sports", 9.3));
+
+        // Simulate fetching articles
+        newsService.fetchArticles();
+
+        // Add Subscribers (Polymorphism)
+        List<Subscriber> subscribers = new ArrayList<>();
+        subscribers.add(new FreeSubscriber(1, "Alice", "alice@example.com", Arrays.asList("Tech")));
+        subscribers.add(new PaidSubscriber(2, "Bob", "bob@example.com", Arrays.asList("Sports", "Tech")));
+
+        // Generate and print digests
+        for (Subscriber sub : subscribers) {
+            List<Article> digest = sub.buildDigest(newsService.getArticles());
+            sub.printDigest(digest);
+            System.out.println();
+        }
+
+        // Overloading filter demonstration
+        System.out.println("--- Filter by Category: Tech ---");
+        for (Article a : newsService.filter("Tech")) {
+            System.out.println(" - " + a.getTitle());
+        }
+
+        System.out.println("\n--- Filter by Keyword: 'World' ---");
+        for (Article a : newsService.filterByKeyword("World")) {
+            System.out.println(" - " + a.getTitle());
+        }
+
+        // Trust report
+        newsService.printSourceTrustReport();
+    }
+}
+
+
